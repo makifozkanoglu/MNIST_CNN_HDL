@@ -23,22 +23,22 @@
 module conv(
     input reset, clk, start,
 
-	input [7:0] Kernel_0, Kernel_1, Kernel_2, 
-	            Kernel_3, Kernel_4, Kernel_5, 
-	            Kernel_6, Kernel_7, Kernel_8, 
-	            Kernel_9, Kernel_10, Kernel_11, 
-	            Kernel_12, Kernel_13, Kernel_14, 
-	            Kernel_15, Kernel_16, Kernel_17, 
-	            Kernel_18, Kernel_19, Kernel_20, 	
+	input signed [8:0] Kernel_0, Kernel_1, Kernel_2, 
+                       Kernel_3, Kernel_4, Kernel_5, 
+                       Kernel_6, Kernel_7, Kernel_8, 
+                       Kernel_9, Kernel_10, Kernel_11, 
+                       Kernel_12, Kernel_13, Kernel_14, 
+                       Kernel_15, Kernel_16, Kernel_17, 
+                       Kernel_18, Kernel_19, Kernel_20, 	
 	            			
-	input [7:0] X_0, X_1, X_2, X_3, 
-	            X_4, X_5, X_6, X_7, 
-	            X_8, X_9, X_10, X_11, 
-	            X_12, X_13, X_14, X_15, 
-	            X_16, X_17, X_18, X_19, 
-	            X_20, 
+	input signed [8:0] X_0, X_1, X_2, X_3, 
+	                   X_4, X_5, X_6, X_7, 
+	                   X_8, X_9, X_10, X_11, 
+	                   X_12, X_13, X_14, X_15, 
+	                   X_16, X_17, X_18, X_19, 
+	                   X_20, 
 	            
-	output reg [24:0] result,
+	output reg signed [25:0] result,
 	
 	output reg done       
     );
@@ -46,11 +46,11 @@ module conv(
     wire [20:0] mult_done;
     
     
-    wire [15:0] multiplier_result0, multiplier_result1, multiplier_result2, multiplier_result3, multiplier_result4, 
-				multiplier_result5, multiplier_result6, multiplier_result7, multiplier_result8, multiplier_result9, 
-				multiplier_result10, multiplier_result11, multiplier_result12, multiplier_result13, multiplier_result14, 
-				multiplier_result15, multiplier_result16, multiplier_result17, multiplier_result18, multiplier_result19, 
-				multiplier_result20;
+    wire signed [16:0] multiplier_result0, multiplier_result1, multiplier_result2, multiplier_result3, multiplier_result4, 
+				       multiplier_result5, multiplier_result6, multiplier_result7, multiplier_result8, multiplier_result9, 
+				       multiplier_result10, multiplier_result11, multiplier_result12, multiplier_result13, multiplier_result14, 
+				       multiplier_result15, multiplier_result16, multiplier_result17, multiplier_result18, multiplier_result19, 
+				       multiplier_result20;
 				
     
     MULTB mult0(.A(X_0),.B(Kernel_0),.result(multiplier_result0),.clk(clk),.reset(reset),.start(start),.done(mult_done[0])); 
@@ -85,17 +85,9 @@ module conv(
 		end
 		else begin
 			if(start) begin
-			    /*if(counter==5'd20)
-			         done <= 1;
-			    else*/ if(counter==5'd21) //üzerine düşünmem gerekiyor
-			    begin
-			         counter <= 0;
-                     result <= 0;
-			         done <= 1;//0;
-			    end
-			    else 
-			         done <= 0;
 			    
+			     
+			   
 			    if(mult_done==21'b111111111111111111111 & counter>0 ) 
 			    begin
 			         result<=result
@@ -106,9 +98,22 @@ module conv(
 			                 +multiplier_result16+multiplier_result17+multiplier_result18+multiplier_result19
 			                 +multiplier_result20;
 			         counter <= counter + 1;
+			         //done <= 0;
 			    end
 			    else if(mult_done==21'b111111111111111111111) 
 			         counter <= counter + 1;
+			    
+			    if(counter==5'd20)
+			         done <= 1;
+			    else if(counter==5'd21) //üzerine düşünmem gerekiyor
+			    begin
+			         counter <= 0;
+                     result <= 0;
+			         done <= 0;
+			    end
+			    else 
+			         done <= 0;
+			    
 			end
 			else begin
 				result <= 0;
