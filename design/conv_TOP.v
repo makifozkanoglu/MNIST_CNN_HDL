@@ -23,41 +23,42 @@
 module conv_TOP(
     input clk, top_start,reset,
     output reg done,
-    output reg [99:0] result_0);
+    output reg [39:0] result_0);
 
 reg [4:0] column_count_in=0;
 reg [4:0] row_count_in=0;
 reg [4:0] column_count_ker=0;
 reg [4:0] row_count_ker=0;
-reg [9:0]addra=0;
-reg [7:0] input_buff [27:0][27:0];
-reg [7:0] kernel_buff [20:0][20:0];
-wire [7:0] dout_in;
-wire [7:0] dout_ker;
+reg [12:0] addra=0;
+reg signed [8:0] input_buff [27:0][27:0];
+reg signed [8:0] kernel_buff [20:0][20:0];
+wire signed [8:0] dout_in;
+wire signed [8:0] dout_ker;
 reg done_in=0;
 reg done_ker=0; 
- 
-blk_mem_gen_1 ImageRAM(.clka(clk),.wea(1'b0),.addra(addra),.dina(8'bZ),.douta(dout_in));
-blk_mem_gen_0 KernelRAM(.clka(clk),.wea(1'b0),.addra(addra[8:0]),.dina(8'bZ),.douta(dout_ker));
+reg [3:0] kernel_counter=0; 
+
+blk_mem_gen_1 ImageRAM(.clka(clk),.wea(1'b0),.addra(addra[9:0]),.dina(8'bZ),.douta(dout_in));
+blk_mem_gen_0 KernelRAM(.clka(clk),.wea(1'b0),.addra(addra),.dina(8'bZ),.douta(dout_ker));
 
 reg conv_start,conv_reset;
 
-reg [7:0] Kernel_0, Kernel_1, Kernel_2, 
-	      Kernel_3, Kernel_4, Kernel_5, 
-	      Kernel_6, Kernel_7, Kernel_8, 
-	      Kernel_9, Kernel_10, Kernel_11, 
-	      Kernel_12, Kernel_13, Kernel_14, 
-	      Kernel_15, Kernel_16, Kernel_17, 
-	      Kernel_18, Kernel_19, Kernel_20;
+reg signed [8:0] Kernel_0, Kernel_1, Kernel_2, 
+                 Kernel_3, Kernel_4, Kernel_5, 
+                 Kernel_6, Kernel_7, Kernel_8, 
+                 Kernel_9, Kernel_10, Kernel_11, 
+                 Kernel_12, Kernel_13, Kernel_14, 
+                 Kernel_15, Kernel_16, Kernel_17, 
+                 Kernel_18, Kernel_19, Kernel_20;
 	            			
-reg [7:0] X_0, X_1, X_2, X_3, 
-	      X_4, X_5, X_6, X_7, 
-	      X_8, X_9, X_10, X_11, 
-	      X_12, X_13, X_14, X_15, 
-	      X_16, X_17, X_18, X_19, 
-	      X_20;
+reg signed [8:0] X_0, X_1, X_2, X_3, 
+                 X_4, X_5, X_6, X_7, 
+                 X_8, X_9, X_10, X_11, 
+                 X_12, X_13, X_14, X_15, 
+                 X_16, X_17, X_18, X_19, 
+                 X_20;
 	      
-wire [24:0] conv_result;	      
+wire signed [25:0] conv_result;	      
 
 wire conv_done;
 
@@ -78,8 +79,10 @@ conv conv_ins(conv_reset,clk,conv_start,
 	          conv_result,conv_done);
                 
 
-reg [3:0]state;
+reg [3:0] state;
+reg single_filter_done;
 reg init;
+reg [1:0] _wait;
 integer i,j;
 
 always@(posedge clk)
@@ -91,7 +94,10 @@ begin
         conv_reset<=1;
         conv_start<=0;
         init<=0;
+        _wait<=0;
+        single_filter_done<=0;
         done<=0;
+        kernel_counter<=0;
         column_count_in<=0;
         row_count_in<=0;
         column_count_ker<=0;
@@ -130,10 +136,11 @@ begin
         4'd1:
             begin
                 addra <= addra + 1;
-                if(row_count_in==27 & column_count_in==27) 
+                if(row_count_in==28 & column_count_in==0) 
                 begin
                     done_in<=1;
                     state<=4'd2;
+                    //addra <= 13'd441;
                     conv_start<=1;
                     conv_reset<=0;
                     column_count_in<=0;
@@ -152,7 +159,7 @@ begin
                     end
                 end
             
-                if(row_count_ker==20 & column_count_ker==20) done_ker<=1;
+                if(row_count_ker==21 & column_count_ker==0) done_ker<=1;
                 else 
                 begin
                     kernel_buff[row_count_ker][column_count_ker]<=dout_ker;
@@ -168,7 +175,7 @@ begin
             begin
                 if(conv_done) 
                 begin
-                    result_0[99:75]<=conv_result;
+                    result_0[39:30]<=conv_result>>>16;
                     conv_start<=0;
                     state<=4'd3;
                     conv_reset<=1;
@@ -234,7 +241,7 @@ begin
             begin
                 if(conv_done) 
                 begin
-                    result_0[74:50]<=conv_result;
+                    result_0[29:20]<=conv_result>>>16;
                     conv_start<=0;
                     state<=4'd5;
                     conv_reset<=1;
@@ -300,7 +307,7 @@ begin
             begin
                 if(conv_done) 
                 begin
-                    result_0[49:25]<=conv_result;
+                    result_0[19:10]<=conv_result>>>16;
                     conv_start<=0;
                     state<=4'd7;
                     conv_reset<=1;
@@ -366,13 +373,15 @@ begin
             begin
                 if(conv_done) 
                 begin
-                    result_0[24:0]<=conv_result;
+                    single_filter_done<=1;
+                    result_0[9:0]<=conv_result>>>16;
                     conv_start<=0;
                     state<=4'd9;
                     conv_reset<=1;
                     row_count_in<=7;
                     row_count_ker<=0;
-                    done<=1;//!!!!!!!!!!!!!
+                    kernel_counter <= kernel_counter + 1;
+                    //done<=1;//!!!!!!!!!!!!!
                 end
                 else
                 begin
@@ -425,8 +434,67 @@ begin
             end
         4'd9:
             begin
-                done<=1;
-                conv_reset<=0;
+                
+                //done<=1;
+                //conv_reset<=0;
+                if (_wait==2'd0) 
+                begin
+                    single_filter_done<=0;
+                    addra<=kernel_counter*441;
+                    _wait<=_wait+1;
+                end
+                else if (_wait==2'd1)
+                    begin
+                        addra <= addra + 1;
+                        _wait<=_wait+1;
+                    end
+                else if (_wait==2'd2)
+                    begin
+                        addra <= addra + 1;
+                        _wait<=2'd0;
+                        state <= 4'd10;
+                    end
+                
+                if (kernel_counter==10) //Number of Filters  = 10
+                begin
+                    done <= 1;
+                    state <= 4'd11;
+                end
+            end
+        4'd10:
+            begin
+            /////////////////////////////////////////////////////////////////////////
+                addra <= addra + 1;
+                if(row_count_ker==21 & column_count_ker==0) 
+                begin
+                    done_ker<=1;
+                    state<=4'd2;
+                    conv_start<=1;
+                    conv_reset<=0;
+                    //column_count_in<=0;
+                    //row_count_in<=0;
+                    column_count_ker<=0;
+                    row_count_ker<=0;
+                end
+                else 
+                begin
+                    kernel_buff[row_count_ker][column_count_ker]<=dout_ker;
+                    column_count_ker <= column_count_ker + 1;
+                    if(column_count_ker==20) 
+                    begin
+                        column_count_ker<=0;
+                        row_count_ker <= row_count_ker + 1;
+                    end
+                end
+            /////////////////////////////////////////////////////////////////////////
+            end
+         4'd11:
+            //////////////////////////////
+            //////////LAST STATE//////////
+            //////////////////////////////
+            begin
+                conv_reset<=1;
+                done<=0;
             end
         endcase
     end

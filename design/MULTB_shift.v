@@ -1,11 +1,11 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: Istanbul Technical University
-// Engineer: Mehmet Akif Özkanoğlu
+// Company: 
+// Engineer: 
 // 
-// Create Date: 12/11/2019 06:35:41 PM
-// Design Name: Behavioral Multiplication
-// Module Name: MULTB
+// Create Date: 02/14/2020 10:28:14 PM
+// Design Name: 
+// Module Name: MULTB_shift
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -19,11 +19,10 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
-module MULTB(input signed [8:0]A,B,
-             input clk,reset,start,
-             output reg done,
-             output reg signed [16:0] result);
+module MULTB_shift(input signed [7:0] A,B,
+                   input clk,reset,start,
+                   output reg done,
+                   output reg signed [14:0] result);
              
      always@(posedge clk) begin
 		if(reset) begin
@@ -32,7 +31,7 @@ module MULTB(input signed [8:0]A,B,
 		end
 		else begin
 			if(start) begin
-				result <= A*B;
+				result <= (A*B)>>>8;
 				done <= 1;
 			end
 			else begin
@@ -43,3 +42,4 @@ module MULTB(input signed [8:0]A,B,
 	 end
     
 endmodule
+
