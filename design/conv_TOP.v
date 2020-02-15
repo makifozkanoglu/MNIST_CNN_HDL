@@ -23,7 +23,7 @@
 module conv_TOP(
     input clk, top_start,reset,
     output reg done,
-    output reg [39:0] result_0);
+    output reg [67:0] result_0);
 
 reg [4:0] column_count_in=0;
 reg [4:0] row_count_in=0;
@@ -58,7 +58,7 @@ reg signed [8:0] X_0, X_1, X_2, X_3,
                  X_16, X_17, X_18, X_19, 
                  X_20;
 	      
-wire signed [25:0] conv_result;	      
+wire signed [26:0] conv_result;	      
 
 wire conv_done;
 
@@ -175,7 +175,7 @@ begin
             begin
                 if(conv_done) 
                 begin
-                    result_0[39:30]<=conv_result>>>16;
+                    result_0[67:51]<=conv_result>>>10;
                     conv_start<=0;
                     state<=4'd3;
                     conv_reset<=1;
@@ -241,7 +241,7 @@ begin
             begin
                 if(conv_done) 
                 begin
-                    result_0[29:20]<=conv_result>>>16;
+                    result_0[50:34]<=conv_result>>>10;
                     conv_start<=0;
                     state<=4'd5;
                     conv_reset<=1;
@@ -307,7 +307,7 @@ begin
             begin
                 if(conv_done) 
                 begin
-                    result_0[19:10]<=conv_result>>>16;
+                    result_0[33:17]<=conv_result>>>10;
                     conv_start<=0;
                     state<=4'd7;
                     conv_reset<=1;
@@ -374,7 +374,7 @@ begin
                 if(conv_done) 
                 begin
                     single_filter_done<=1;
-                    result_0[9:0]<=conv_result>>>16;
+                    result_0[16:0]<=conv_result>>>10;
                     conv_start<=0;
                     state<=4'd9;
                     conv_reset<=1;

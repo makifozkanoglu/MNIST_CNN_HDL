@@ -23,7 +23,7 @@
 module MULTB(input signed [8:0]A,B,
              input clk,reset,start,
              output reg done,
-             output reg signed [16:0] result);
+             output reg signed [17:0] result);
              
      always@(posedge clk) begin
 		if(reset) begin

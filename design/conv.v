@@ -38,7 +38,7 @@ module conv(
 	                   X_16, X_17, X_18, X_19, 
 	                   X_20, 
 	            
-	output reg signed [25:0] result,
+	output reg signed [26:0] result,
 	
 	output reg done       
     );
@@ -46,7 +46,7 @@ module conv(
     wire [20:0] mult_done;
     
     
-    wire signed [16:0] multiplier_result0, multiplier_result1, multiplier_result2, multiplier_result3, multiplier_result4, 
+    wire signed [17:0] multiplier_result0, multiplier_result1, multiplier_result2, multiplier_result3, multiplier_result4, 
 				       multiplier_result5, multiplier_result6, multiplier_result7, multiplier_result8, multiplier_result9, 
 				       multiplier_result10, multiplier_result11, multiplier_result12, multiplier_result13, multiplier_result14, 
 				       multiplier_result15, multiplier_result16, multiplier_result17, multiplier_result18, multiplier_result19, 
