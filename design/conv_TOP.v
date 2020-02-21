@@ -484,7 +484,7 @@ begin
                     row_count_ker<=row_count_ker+1;
                 end
             end
-        4'd9:
+        4'd9:// bir sonraki kernel için bufferı güncelleyecek state öncesi ara bir bekleme state'i, aynı zamanda pooling layerın sonucunuda alıyoruz.
             begin
                 
                 //done<=1;
@@ -510,13 +510,13 @@ begin
                         state <= 4'd10;
                     end
                 
-                if (kernel_counter==32) //Number of Filters  = 32
+                if (kernel_counter==32) //Number of Filters  = 32 //son filtre bittiyse convolution işlemini bitiren state
                 begin
                     done <= 1;
                     state <= 4'd11;
                 end
             end
-        4'd10:
+        4'd10://kernel bufferı sıradaki kernelin değerleriyle güncelleyen state, bu state bitince 2. state dönerek tekrar çarpma işlemlerine başlıyor
             begin
             /////////////////////////////////////////////////////////////////////////
                 addra <= addra + 1;
