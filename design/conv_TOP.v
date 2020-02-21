@@ -295,7 +295,7 @@ begin
                     conv_start<=0;
                     state<=4'd5;
                     conv_reset<=1;
-                    row_count_in<=0;
+                    row_count_in<=7;
                     row_count_ker<=0;
                 end
                 else
@@ -430,7 +430,7 @@ begin
                     conv_start<=0;
                     state<=4'd9;
                     conv_reset<=1;
-                    row_count_in<=7;
+                    row_count_in<=0;
                     row_count_ker<=0;
                     kernel_counter <= kernel_counter + 1;
                     //done<=1;//!!!!!!!!!!!!!
