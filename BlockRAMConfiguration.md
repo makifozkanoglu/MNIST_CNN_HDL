@@ -3,7 +3,7 @@
 
 Write width:9
 
-Write Depth:4410
+Write Depth:14112
 
 Operating Mode:Read First
 

@@ -22,24 +22,64 @@
 
 module conv_TOP(
     input clk, top_start,reset,
-    output reg done,
-    output reg [67:0] result_0);
+    output reg done,dense_flag,
+    output reg [17:0] dense_in
+    );
+
+reg [71:0] result_0;
 
 reg [4:0] column_count_in=0;
 reg [4:0] row_count_in=0;
 reg [4:0] column_count_ker=0;
 reg [4:0] row_count_ker=0;
-reg [12:0] addra=0;
+reg [13:0] addra=0;
 reg signed [8:0] input_buff [27:0][27:0];
 reg signed [8:0] kernel_buff [20:0][20:0];
 wire signed [8:0] dout_in;
 wire signed [8:0] dout_ker;
 reg done_in=0;
 reg done_ker=0; 
-reg [3:0] kernel_counter=0; 
+reg [5:0] kernel_counter=0; 
 
 blk_mem_gen_1 ImageRAM(.clka(clk),.wea(1'b0),.addra(addra[9:0]),.dina(8'bZ),.douta(dout_in));
 blk_mem_gen_0 KernelRAM(.clka(clk),.wea(1'b0),.addra(addra),.dina(8'bZ),.douta(dout_ker));
+
+
+//////////////////////////////////////////
+wire signed [8:0] bias_mem [0:31];
+assign bias_mem[0]= -9'd29;
+assign bias_mem[1]= -9'd64;
+assign bias_mem[2]= -9'd99;
+assign bias_mem[3]= -9'd40;
+assign bias_mem[4]= -9'd167;
+assign bias_mem[5]= -9'd113;
+assign bias_mem[6]= -9'd249;
+assign bias_mem[7]= -9'd129;
+assign bias_mem[8]= -9'd129;
+assign bias_mem[9]= -9'd128;
+assign bias_mem[10]= -9'd105;
+assign bias_mem[11]= -9'd178;
+assign bias_mem[12]= -9'd140; 
+assign bias_mem[13]= -9'd97;
+assign bias_mem[14]= -9'd151;
+assign bias_mem[15]= -9'd123;
+assign bias_mem[16]= -9'd86;
+assign bias_mem[17]= -9'd81;
+assign bias_mem[18]= -9'd201;
+assign bias_mem[19]= -9'd244; 
+assign bias_mem[20]= -9'd70;
+assign bias_mem[21]= -9'd10;
+assign bias_mem[22]= -9'd176; 
+assign bias_mem[23]= -9'd141;
+assign bias_mem[24]= -9'd115;
+assign bias_mem[25]= -9'd20;
+assign bias_mem[26]= -9'd81; 
+assign bias_mem[27]= -9'd87;
+assign bias_mem[28]= -9'd108;
+assign bias_mem[29]= -9'd119;
+assign bias_mem[30]= -9'd159;
+assign bias_mem[31]= -9'd196;
+///////////////////////////////////////////
 
 reg conv_start,conv_reset;
 
@@ -77,7 +117,11 @@ conv conv_ins(conv_reset,clk,conv_start,
 	          X_16, X_17, X_18, X_19, 
 	          X_20,
 	          conv_result,conv_done);
-                
+
+wire [71:0] pool_in;
+assign pool_in=result_0; 
+wire [17:0] pool_out;               
+max_pool_72 pool_uut (clk,reset,pool_in,pool_out);
 
 reg [3:0] state;
 reg single_filter_done;
@@ -90,6 +134,7 @@ begin
     if(reset)
     begin
         //result_0<=0;
+        dense_flag<=0;
         state<=0;
         conv_reset<=1;
         conv_start<=0;
@@ -123,7 +168,7 @@ begin
     else if(top_start) 
     begin
         case(state)
-        4'd0:
+        4'd0://RAM deki 2 clock cycle gecikmeyi bekletmek için başlangıç statei
             begin
                 if(init) 
                 begin
@@ -133,12 +178,13 @@ begin
                 init<=init+1;
                 addra<=addra+1;
             end
-        4'd1:
+        4'd1://input ve ilk filtrenin ramdeki değerlerini ilgili buffera dolduruyor
             begin
                 addra <= addra + 1;
                 if(row_count_in==28 & column_count_in==0) 
                 begin
                     done_in<=1;
+                    done_ker<=0;
                     state<=4'd2;
                     //addra <= 13'd441;
                     conv_start<=1;
@@ -172,10 +218,12 @@ begin
                 end
             end
         4'd2:
+        //bufferdaki ilgili değerleri sıra sıra çarpım yapacak modülün grişlerine atıyor
+        //bu statete kernelin  inputun sol üst köşeine denk geldiği çarpma işlemlerini yapıyor
             begin
                 if(conv_done) 
                 begin
-                    result_0[67:51]<=conv_result>>>10;
+                    result_0[71:54]<=(conv_result+bias_mem[kernel_counter])>>>10;
                     conv_start<=0;
                     state<=4'd3;
                     conv_reset<=1;
@@ -231,21 +279,23 @@ begin
                     row_count_ker<=row_count_ker+1;
                 end
             end
-        4'd3:
+        4'd3://convolution çarpımlarını yapan modülü yeniden başlatan state
             begin
                 conv_reset<=0;
                 conv_start<=1;
                 state<=4'd4;
             end
         4'd4:
+        //bu statete kernelin  inputun sağ üst köşeine denk geldiği çarpma işlemlerini yapıyor
+
             begin
                 if(conv_done) 
                 begin
-                    result_0[50:34]<=conv_result>>>10;
+                    result_0[53:36]<=(conv_result+bias_mem[kernel_counter])>>>10;
                     conv_start<=0;
                     state<=4'd5;
                     conv_reset<=1;
-                    row_count_in<=7;
+                    row_count_in<=0;
                     row_count_ker<=0;
                 end
                 else
@@ -297,17 +347,18 @@ begin
                     row_count_ker<=row_count_ker+1;
                 end
             end
-        4'd5:
+        4'd5://convolution çarpımlarını yapan modülü yeniden başlatan state
             begin
                 conv_reset<=0;
                 conv_start<=1;
                 state<=4'd6;
             end
         4'd6:
+        //bu statete kernelin  inputun sol alt köşeine denk geldiği çarpma işlemlerini yapıyor
             begin
                 if(conv_done) 
                 begin
-                    result_0[33:17]<=conv_result>>>10;
+                    result_0[35:18]<=(conv_result+bias_mem[kernel_counter])>>>10;
                     conv_start<=0;
                     state<=4'd7;
                     conv_reset<=1;
@@ -370,11 +421,12 @@ begin
                 state<=4'd8;
             end
         4'd8:
+        //bu statete kernelin  inputun sağ alt köşeine denk geldiği çarpma işlemlerini yapıyor
             begin
                 if(conv_done) 
                 begin
                     single_filter_done<=1;
-                    result_0[16:0]<=conv_result>>>10;
+                    result_0[17:0]<=(conv_result+bias_mem[kernel_counter])>>>10;
                     conv_start<=0;
                     state<=4'd9;
                     conv_reset<=1;
@@ -445,17 +497,20 @@ begin
                 end
                 else if (_wait==2'd1)
                     begin
+                        dense_in<=pool_out;
+                        dense_flag<=1;
                         addra <= addra + 1;
                         _wait<=_wait+1;
                     end
                 else if (_wait==2'd2)
                     begin
+                        dense_flag<=0;
                         addra <= addra + 1;
                         _wait<=2'd0;
                         state <= 4'd10;
                     end
                 
-                if (kernel_counter==10) //Number of Filters  = 10
+                if (kernel_counter==32) //Number of Filters  = 32
                 begin
                     done <= 1;
                     state <= 4'd11;
